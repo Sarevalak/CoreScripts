@@ -453,6 +453,7 @@ function BaseCell:SaveObjectsSpawned(objects)
                     local summon = {}
                     summon.duration = object.summon.duration
                     summon.effectId = object.summon.effectId
+                    summon.effectIndex = object.summon.effectIndex
                     summon.spellId = object.summon.spellId
                     summon.startTime = object.summon.startTime
 
