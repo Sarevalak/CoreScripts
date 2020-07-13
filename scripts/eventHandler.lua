@@ -1163,7 +1163,7 @@ eventHandler.OnActorDeath = function(pid, cellDescription)
         if LoadedCells[cellDescription] ~= nil then
 
             tes3mp.ReadReceivedActorList()
-            local actors = packetReader.GetActorPacketTables("death").actors
+            local actors = packetReader.GetActorPacketTables("ActorDeath").actors
 
             local eventStatus = customEventHooks.triggerValidators("OnActorDeath", {pid, cellDescription, actors})
 
