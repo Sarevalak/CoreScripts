@@ -575,12 +575,6 @@ function OnObjectMiscellaneous(pid, cellDescription)
     eventHandler.OnObjectMiscellaneous(pid, cellDescription)
 end
 
-function OnObjectRestock(pid, cellDescription)
-    tes3mp.LogMessage(enumerations.log.INFO, "Called \"OnObjectRestock\" for " .. logicHandler.GetChatName(pid) ..
-        " and cell " .. cellDescription)
-    eventHandler.OnObjectRestock(pid, cellDescription)
-end
-
 function OnObjectTrap(pid, cellDescription)
     tes3mp.LogMessage(enumerations.log.INFO, "Called \"OnObjectTrap\" for " .. logicHandler.GetChatName(pid) ..
         " and cell " .. cellDescription)
