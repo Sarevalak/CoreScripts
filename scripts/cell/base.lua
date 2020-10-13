@@ -661,34 +661,49 @@ function BaseCell:SaveContainers(pid)
                 if action == enumerations.container.ADD then
                     tes3mp.LogAppend(enumerations.log.VERBOSE, "- Adding count of " .. itemCount .. " to existing item " ..
                         item.refId .. " with current count of " .. item.count)
-                    item.count = item.count + itemCount
 
-                elseif action == enumerations.container.REMOVE then
-                    local newCount = item.count - actionCount
-
-                    -- The item will still exist in the container with a lower count
-                    if newCount > 0 then
-                        tes3mp.LogAppend(enumerations.log.VERBOSE, "- Removed count of " .. actionCount .. " from item " ..
-                            item.refId .. " that had count of " .. item.count .. ", resulting in remaining count of " .. newCount)
-                        item.count = newCount
-                    -- The item is to be completely removed
-                    elseif newCount == 0 then
-                        inventory[foundIndex] = nil
-                    else
-                        actionCount = item.count
-                        tes3mp.LogAppend(enumerations.log.WARN, "- Attempt to remove count of " .. actionCount ..
-                            " from item" .. item.refId .. " that only had count of " .. item.count)
-                        tes3mp.LogAppend(enumerations.log.WARN, "- Removed just " .. actionCount .. " instead")
-                        tes3mp.SetContainerItemActionCountByIndex(objectIndex, itemIndex, actionCount)
-                        inventory[foundIndex] = nil
+                    local newCount = math.abs(item.count) + math.abs(itemCount)
+                    if item.count < 0 or itemCount < 0 then
+                        newCount = -newCount
                     end
 
-                    -- Is this a generated record? If so, remove the link to it
-                    if inventory[foundIndex] == nil and logicHandler.IsGeneratedRecord(itemRefId) then
-                        local recordStore = logicHandler.GetRecordStoreByRecordId(itemRefId)
+                    item.count = newCount
 
-                        if recordStore ~= nil then
-                            self:RemoveLinkToRecord(recordStore.storeType, itemRefId, uniqueIndex)
+                elseif action == enumerations.container.REMOVE then
+                    local newCount = math.abs(item.count) - math.abs(actionCount)
+                    if item.count < 0 or actionCount < 0 then
+                        newCount = -newCount
+                    end
+                    
+                    if itemCount < 0 and subAction == enumerations.containerSub.TRADE then
+                        tes3mp.LogAppend(enumerations.log.VERBOSE, "- Not removing restocking item " .. item.refId  .. " that has count of " .. -item.count)
+                        --  If this is a restocking quantity, just don't remove it
+                        tes3mp.SetContainerItemActionCountByIndex(objectIndex, itemIndex, 0)
+                    else
+                        -- The item will still exist in the container with a lower count
+                        if newCount > 0 then
+                            tes3mp.LogAppend(enumerations.log.VERBOSE, "- Removed count of " .. actionCount .. " from item " ..
+                                item.refId .. " that had count of " .. item.count .. ", resulting in remaining count of " .. newCount)
+                            item.count = newCount
+                        -- The item is to be completely removed
+                        elseif newCount == 0 then
+                            inventory[foundIndex] = nil
+                        else
+                            actionCount = item.count
+                            tes3mp.LogAppend(enumerations.log.WARN, "- Attempt to remove count of " .. actionCount ..
+                                " from item" .. item.refId .. " that only had count of " .. item.count)
+                            tes3mp.LogAppend(enumerations.log.WARN, "- Removed just " .. actionCount .. " instead")
+                            tes3mp.SetContainerItemActionCountByIndex(objectIndex, itemIndex, actionCount)
+                            inventory[foundIndex] = nil
+                        end
+
+                        -- Is this a generated record? If so, remove the link to it
+                        if inventory[foundIndex] == nil and logicHandler.IsGeneratedRecord(itemRefId) then
+                            local recordStore = logicHandler.GetRecordStoreByRecordId(itemRefId)
+
+                            if recordStore ~= nil then
+                                self:RemoveLinkToRecord(recordStore.storeType, itemRefId, uniqueIndex)
+                            end
                         end
                     end
                 end
@@ -723,6 +738,7 @@ function BaseCell:SaveContainers(pid)
     -- If so, only send the reply to other players
     -- i.e. sendToOtherPlayers is true and skipAttachedPlayer is true
     if subAction == enumerations.containerSub.REPLY_TO_REQUEST then
+        print("- send inventory REPLY_TO_REQUEST")
         tes3mp.SendContainer(true, true)
     -- Is this a container packet originating from a client script or
     -- dialogue? If so, its effects have already taken place on the
@@ -730,12 +746,14 @@ function BaseCell:SaveContainers(pid)
     elseif packetOrigin == enumerations.packetOrigin.CLIENT_SCRIPT_LOCAL or
         packetOrigin == enumerations.packetOrigin.CLIENT_SCRIPT_GLOBAL or
         packetOrigin == enumerations.packetOrigin.CLIENT_DIALOGUE then
+        print("- send inventory CLIENT_DIALOGUE")
         tes3mp.SendContainer(true, true)
     -- Otherwise, send the received packet to everyone, including the
     -- player who sent it (because no clientside changes will be made
     -- to the related container otherwise)
     -- i.e. sendToOtherPlayers is true and skipAttachedPlayer is false
     else
+        print("- send inventory other")
         tes3mp.SendContainer(true, false)
     end
 
